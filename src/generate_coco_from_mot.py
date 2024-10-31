@@ -23,6 +23,14 @@ from trackformer.datasets.tracking.mots20_sequence import load_mots_gt
 MOTS_ROOT = 'data/MOTS20'
 VIS_THRESHOLD = 0.25
 
+## 数据集路径  
+DATASET_ROOT = '/home/ljq/UAV-Tracking/Dataset'          
+MOTS_ROOT = os.path.join(DATASET_ROOT, 'MOTS20')
+MOT17_ROOT = os.path.join(DATASET_ROOT, '/home/ljq/UAV-Tracking/Dataset/MOT17')
+MOT20_ROOT = os.path.join(DATASET_ROOT, 'MOT20')
+MOT_FLY_ROOT = os.path.join(DATASET_ROOT, '/home/ljq/UAV-Tracking/Dataset/MOT_FLY_V0.4/MOT_FLY_V0.3')
+
+
 MOT_15_SEQS_INFO = {
     'ETH-Bahnhof': {'img_width': 640, 'img_height': 480, 'seq_length': 1000},
     'ETH-Sunnyday': {'img_width': 640, 'img_height': 480, 'seq_length': 354},
@@ -32,13 +40,34 @@ MOT_15_SEQS_INFO = {
     'TUD-Campus': {'img_width': 640, 'img_height': 480, 'seq_length': 71},
     'TUD-Stadtmitte': {'img_width': 640, 'img_height': 480, 'seq_length': 179},}
 
+# 添加MOT_FLY的数据集配置
+MOT_FLY_SEQS = [
+    'DJI_0003_D_S_E',
+    'DJI_0288_D_M_E',
+    'DJI_0281_D_S_H',
+    'DJI_0280_L_M_E',
+    'DJI_0277_L_S_H',
+    'DJI_0048_D_S_E',
+    'DJI_0283_D_M_H',
+    'DJI_0278_L_M_H'
+]
 
 def generate_coco_from_mot(split_name='train', seqs_names=None,
                            root_split='train', mots=False, mots_vis=False,
-                           frame_range=None, data_root='data/MOT17'):
+                           frame_range=None, data_root=None):
     """
     Generates COCO data from MOT.
     """
+    if data_root is None:
+        if args.mot_fly:
+            data_root = MOT_FLY_ROOT
+        elif args.mot20:
+            data_root = MOT20_ROOT
+        elif args.mots20:
+            data_root = MOTS_ROOT
+        else:
+            data_root = MOT17_ROOT
+
     if frame_range is None:
         frame_range = {'start': 0.0, 'end': 1.0}
 
@@ -263,7 +292,10 @@ def generate_coco_from_mot(split_name='train', seqs_names=None,
         json.dump(annotations, anno_file, indent=4)
 
 
-def check_coco_from_mot(coco_dir='data/MOT17/mot17_train_coco', annotation_file='data/MOT17/annotations/mot17_train_coco.json', img_id=None):
+def check_coco_from_mot(
+        coco_dir='/home/ljq/UAV-Tracking/Dataset/MOT_FLY_V0.4/MOT_FLY_V0.3/mot_fly_train_coco', 
+        annotation_file='/home/ljq/UAV-Tracking/Dataset/MOT_FLY_V0.4/MOT_FLY_V0.3/annotations/mot_fly_train_coco.json', 
+        img_id=None):
     """
     Visualize generated COCO data. Only used for debugging.
     """
@@ -292,11 +324,72 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate COCO from MOT.')
     parser.add_argument('--mots20', action='store_true')
     parser.add_argument('--mot20', action='store_true')
+    parser.add_argument('--mot_fly', action='store_true')
     args = parser.parse_args()
 
     mot15_seqs_names = list(MOT_15_SEQS_INFO.keys())
 
-    if args.mots20:
+    if args.mot_fly:
+        # MOT_FLY处理分支
+        # 生成完整训练集
+        generate_coco_from_mot(
+            'mot_fly_train_coco',
+            seqs_names=MOT_FLY_SEQS)
+
+        # CROSS VAL SPLIT 1 (按场景类型划分)
+        generate_coco_from_mot(
+            'mot_fly_train_cross_val_1_coco',
+            seqs_names=['DJI_0003_D_S_E', 'DJI_0288_D_M_E', 'DJI_0281_D_S_H', 'DJI_0277_L_S_H', 'DJI_0048_D_S_E'])
+        
+        generate_coco_from_mot(
+            'mot_fly_val_cross_val_1_coco',
+            seqs_names=['DJI_0280_L_M_E', 'DJI_0283_D_M_H', 'DJI_0278_L_M_H'])
+
+        # CROSS VAL SPLIT 2 (按目标密度划分)
+        generate_coco_from_mot(
+            'mot_fly_train_cross_val_2_coco',
+            seqs_names=['DJI_0003_D_S_E', 'DJI_0281_D_S_H', 'DJI_0277_L_S_H', 
+                       'DJI_0048_D_S_E', 'DJI_0278_L_M_H'])
+        
+        generate_coco_from_mot(
+            'mot_fly_val_cross_val_2_coco',
+            seqs_names=['DJI_0288_D_M_E', 'DJI_0280_L_M_E', 'DJI_0283_D_M_H'])
+
+        # CROSS VAL SPLIT 3 (按高度划分)
+        generate_coco_from_mot(
+            'mot_fly_train_cross_val_3_coco',
+            seqs_names=['DJI_0003_D_S_E', 'DJI_0288_D_M_E', 'DJI_0280_L_M_E', 
+                       'DJI_0048_D_S_E'])
+        
+        generate_coco_from_mot(
+            'mot_fly_val_cross_val_3_coco',
+            seqs_names=['DJI_0281_D_S_H', 'DJI_0277_L_S_H', 'DJI_0283_D_M_H', 'DJI_0278_L_M_H'])
+
+        # CROSS VAL FRAME SPLIT
+        generate_coco_from_mot(
+            'mot_fly_train_cross_val_frame_0_0_to_0_5_coco',
+            seqs_names=MOT_FLY_SEQS,
+            frame_range={'start': 0, 'end': 0.5})
+        
+        generate_coco_from_mot(
+            'mot_fly_train_cross_val_frame_0_5_to_1_0_coco',
+            seqs_names=MOT_FLY_SEQS,
+            frame_range={'start': 0.5, 'end': 1.0})
+
+        # Leave-one-out cross validation
+        for i in range(len(MOT_FLY_SEQS)):
+            train_seqs = MOT_FLY_SEQS.copy()
+            val_seqs = train_seqs.pop(i)
+
+            generate_coco_from_mot(
+                f'mot_fly_train_{i + 1}_coco',
+                seqs_names=train_seqs)
+            
+            generate_coco_from_mot(
+                f'mot_fly_val_{i + 1}_coco',
+                seqs_names=[val_seqs])
+            
+    elif args.mots20:
         #
         # MOTS20
         #

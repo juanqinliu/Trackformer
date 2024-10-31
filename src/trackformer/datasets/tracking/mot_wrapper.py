@@ -7,6 +7,8 @@ from torch.utils.data import Dataset
 from .mot17_sequence import MOT17Sequence
 from .mot20_sequence import MOT20Sequence
 from .mots20_sequence import MOTS20Sequence
+from .mot_fly_sequence import MOTFLYSequence
+from typing import List, Optional
 
 
 class MOT17Wrapper(Dataset):
@@ -118,3 +120,66 @@ class MOTS20Wrapper(MOT17Wrapper):
         self._data = []
         for seq in sequences:
             self._data.append(MOTS20Sequence(seq_name=seq, **kwargs))
+
+class MOTFLYWrapper(Dataset):
+    """A Wrapper for the MOT_FLY_Sequence class to return multiple sequences."""
+    
+    def __init__(self, split: str, seqs_names: Optional[List[str]] = None, **kwargs) -> None:
+        """Initializes all subset of the dataset.
+        
+        Keyword arguments:
+        split -- the split of the dataset to use
+        seqs_names -- optional list of specific sequence names to use
+        kwargs -- kwargs for the MOTFLYSequence dataset
+        """
+        train_sequences = [
+            'DJI_0003_D_S_E',
+            'DJI_0288_D_M_E', 
+            'DJI_0281_D_S_H',
+            'DJI_0048_D_S_E',
+            'DJI_0277_L_S_H',
+            'DJI_0280_L_M_E',
+            'DJI_0283_D_M_H',
+            'DJI_0278_L_M_H',
+        ]
+        
+        test_sequences = [
+            'DJI_0003_D_S_E',
+            'DJI_0051_L_S_E',
+            'DJI_0277_L_S_H',
+            'DJI_0278_L_M_H',
+            'DJI_0280_L_M_E',
+            'DJI_0281_D_S_H',
+            'DJI_0283_D_M_H',
+            'DJI_0288_D_M_E',
+        ]
+        
+        # 移除seqs_names参数，这样它就不会传递给MOTFLYSequence
+        sequence_kwargs = kwargs.copy()
+        if 'seqs_names' in sequence_kwargs:
+            del sequence_kwargs['seqs_names']
+        
+        # If specific sequences are provided, use them
+        if seqs_names is not None:
+            sequences = seqs_names
+        # Otherwise use split-based sequences
+        elif split == "TRAIN":
+            sequences = train_sequences
+        elif split == "TEST":
+            sequences = test_sequences
+        elif split == "ALL":
+            sequences = sorted(list(set(train_sequences + test_sequences)))
+        elif split in train_sequences + test_sequences:
+            sequences = [split]
+        else:
+            raise NotImplementedError(f"MOT_FLY sequence not found: {split}")
+        
+        self._data = []
+        for seq in sequences:
+            self._data.append(MOTFLYSequence(seq_name=seq, **sequence_kwargs))
+    
+    def __len__(self) -> int:
+        return len(self._data)
+    
+    def __getitem__(self, idx: int):
+        return self._data[idx]

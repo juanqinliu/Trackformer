@@ -2,15 +2,18 @@ output_dir: null
 verbose: false
 seed: 666
 
-obj_detect_checkpoint_file: models/mot17_crowdhuman_deformable_multi_frame/checkpoint_epoch_40.pth
+obj_detect_checkpoint_file: models/mot_fly_deformable_multi_frame/checkpoint.pth
 
 interpolate: False
 # if available load tracking results and only evaluate
 load_results_dir: null
 
-# dataset (look into src/datasets/tracking/factory.py)
-dataset_name: MOT17-ALL-ALL
-data_root_dir: data
+# # dataset (look into src/datasets/tracking/factory.py)
+# dataset_name: MOT17-ALL-ALL
+# data_root_dir: /home/ljq/UAV-Tracking/Dataset
+
+dataset_name: MOT_FLY-ALL              ## MOT_FLY-TRAIN ，MOT_FLY-VAL
+data_root_dir: /home/ljq/UAV-Tracking/Dataset
 
 # [False, 'debug', 'pretty']
 # compile video with: `ffmpeg -f image2 -framerate 15 -i %06d.jpg -vcodec libx264 -y movie.mp4 -vf scale=320:-1`

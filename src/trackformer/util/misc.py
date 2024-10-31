@@ -21,9 +21,9 @@ import torchvision
 from torch import Tensor
 from visdom import Visdom
 
-if int(torchvision.__version__.split('.')[0]) <= 0 and int(torchvision.__version__.split('.')[1]) < 7:
-    from torchvision.ops import _new_empty_tensor
-    from torchvision.ops.misc import _output_size
+# if float(torchvision.__version__[:3]) < 0.7:
+#     from torchvision.ops import _new_empty_tensor
+#     from torchvision.ops.misc import _output_size
 
 
 class SmoothedValue(object):
@@ -463,6 +463,35 @@ def accuracy(output, target, topk=(1,)):
     return res
 
 
+# def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corners=None):
+#     # type: (Tensor, Optional[List[int]], Optional[float], str, Optional[bool]) -> Tensor
+#     """
+#     Equivalent to nn.functional.interpolate, but with support for empty batch sizes.
+#     This will eventually be supported natively by PyTorch, and this
+#     class can go away.
+#     """
+#     if float(torchvision.__version__[:3]) < 0.7:
+#         if input.numel() > 0:
+#             return torch.nn.functional.interpolate(
+#                 input, size, scale_factor, mode, align_corners
+#             )
+
+#         output_shape = _output_size(2, input, size, scale_factor)
+#         output_shape = list(input.shape[:-2]) + list(output_shape)
+#         return _new_empty_tensor(input, output_shape)
+#     else:
+#         return torchvision.ops.misc.interpolate(input, size, scale_factor, mode, align_corners)
+
+
+def _output_size(dim, input, size=None, scale_factor=None):
+    # 重新实现 _output_size 函数，计算 output 的大小
+    assert dim == 2
+    if size is not None:
+        return size
+    if scale_factor is not None:
+        return [int(input.size(i + 2) * scale_factor) for i in range(dim)]
+    raise ValueError("Either size or scale_factor should be defined")
+
 def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corners=None):
     # type: (Tensor, Optional[List[int]], Optional[float], str, Optional[bool]) -> Tensor
     """
@@ -470,7 +499,7 @@ def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corne
     This will eventually be supported natively by PyTorch, and this
     class can go away.
     """
-    if int(torchvision.__version__.split('.')[0]) <= 0 and int(torchvision.__version__.split('.')[1]) < 7:
+    if float(torchvision.__version__[:3]) < 0.7:
         if input.numel() > 0:
             return torch.nn.functional.interpolate(
                 input, size, scale_factor, mode, align_corners
@@ -478,10 +507,10 @@ def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corne
 
         output_shape = _output_size(2, input, size, scale_factor)
         output_shape = list(input.shape[:-2]) + list(output_shape)
-        return _new_empty_tensor(input, output_shape)
+        return torch.empty(output_shape, dtype=input.dtype, device=input.device)
     else:
-        return torchvision.ops.misc.interpolate(input, size, scale_factor, mode, align_corners)
-
+        return torch.nn.functional.interpolate(input, size, scale_factor, mode, align_corners)
+    
 
 class DistributedWeightedSampler(torch.utils.data.DistributedSampler):
     def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, replacement=True):

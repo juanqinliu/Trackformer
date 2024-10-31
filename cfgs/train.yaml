@@ -93,8 +93,8 @@ train_split: train
 val_split: val
 coco_path: data/coco_2017
 coco_panoptic_path: null
-mot_path_train: data/MOT17
-mot_path_val: data/MOT17
+mot_path_train: /home/ljq/UAV-Tracking/Dataset/MOT_FLY_V0.4/MOT_FLY_V0.3
+mot_path_val: /home/ljq/UAV-Tracking/Dataset/MOT_FLY_V0.4/MOT_FLY_V0.3
 crowdhuman_path: data/CrowdHuman
 # allows for joint training of mot and crowdhuman/coco_person with the `mot_crowdhuman`/`mot_coco_person` dataset
 crowdhuman_train_split: null

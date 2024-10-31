@@ -8,7 +8,6 @@ import torch
 from torch.utils.cpp_extension import CUDA_HOME
 from torch.utils.cpp_extension import CppExtension
 from torch.utils.cpp_extension import CUDAExtension
-
 from setuptools import find_packages
 from setuptools import setup
 
@@ -31,12 +30,34 @@ def get_extensions():
         extension = CUDAExtension
         sources += source_cuda
         define_macros += [("WITH_CUDA", None)]
+        
+        # 基本 CUDA 编译选项
         extra_compile_args["nvcc"] = [
             "-DCUDA_HAS_FP16=1",
             "-D__CUDA_NO_HALF_OPERATORS__",
             "-D__CUDA_NO_HALF_CONVERSIONS__",
             "-D__CUDA_NO_HALF2_OPERATORS__",
         ]
+
+        # 使用更低的计算能力版本
+        extra_compile_args["nvcc"].extend([
+            "-gencode=arch=compute_80,code=sm_80",
+            "-gencode=arch=compute_86,code=sm_86",
+            "-gencode=arch=compute_86,code=compute_86",
+        ])
+
+        # 额外的编译选项
+        extra_compile_args["nvcc"].extend([
+            "--expt-relaxed-constexpr",
+            "-O2",
+            "--ptxas-options=-v",
+            "--gpu-architecture=compute_86",
+            "--gpu-code=sm_86",
+            "-maxrregcount=128"
+        ])
+
+        # 添加 C++ 编译选项
+        extra_compile_args["cxx"] = ["-O2"]
     else:
         raise NotImplementedError('Cuda is not available')
 
@@ -60,7 +81,6 @@ setup(
     url="xxx",
     description="Multi-Scale Deformable Attention Module in Deformable DETR",
     packages=find_packages(exclude=("configs", "tests",)),
-    # install_requires=requirements,
     ext_modules=get_extensions(),
     cmdclass={"build_ext": torch.utils.cpp_extension.BuildExtension},
 )
